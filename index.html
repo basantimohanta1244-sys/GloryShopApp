@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GloryShop - Ultimate Premium UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* ADAPTIVE DARK THEME TO MATCH LOGO */
+        :root {
+            --bg-dark: #07090F;
+            --card-bg: #121620;
+            --primary-accent: #FACC15;
+            --primary-glow: rgba(250, 204, 21, 0.15); 
+            --text-main: #FFFFFF;
+            --text-muted: #94A3B8;
+            --success-green: #10B981;
+            --pending-orange: #F59E0B;
+            --error-red: #EF4444;
+            --border-color: #1E293B;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; background-color: #000; color: var(--text-main); display: flex; justify-content: center; height: 100vh; overflow: hidden; overscroll-behavior-y: none; }
+        ::-webkit-scrollbar { display: none; }
+
+        .phone-container { width: 100%; max-width: 420px; height: 100%; background-color: var(--bg-dark); position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 25px rgba(0,0,0,0.9); }
+        .hidden { display: none !important; }
+        .screen { flex: 1; display: flex; flex-direction: column; overflow-y: scroll; padding: 20px; padding-bottom: 80px; }
+        .auth-screen { padding-bottom: 20px; justify-content: center; }
+
+        .splash-logo { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; animation: pulse 2s infinite; filter: drop-shadow(0 0 15px var(--primary-glow)); }
+        .auth-logo { width: 100px; height: 100px; object-fit: contain; margin-bottom: 20px; filter: drop-shadow(0 0 10px var(--primary-glow)); }
+        .header-logo { height: 32px; width: auto; object-fit: contain; margin-right: 10px; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+        input { width: 100%; padding: 15px; background: #0B0E14; border: 1px solid var(--border-color); border-radius: 12px; color: #fff; font-size: 15px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary-accent); box-shadow: 0 0 0 3px var(--primary-glow); }
+        
+        .btn { width: 100%; padding: 15px; background: var(--primary-accent); color: #000; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 10px; transition: transform 0.1s, opacity 0.2s; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn:active { transform: scale(0.97); opacity: 0.9; } 
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .link-text { color: var(--primary-accent); text-align: center; margin-top: 20px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .get-key-box { background: rgba(250, 204, 21, 0.08); border: 1px solid var(--primary-accent); color: var(--primary-accent); padding: 14px; border-radius: 12px; text-align: center; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; margin-top: 5px; }
+        .get-key-box:active { background: rgba(250, 204, 21, 0.15); transform: scale(0.97); }
+
+        #splash-screen { background: var(--bg-dark); display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; z-index: 999; }
+        .bottom-spinner { width: 40px; height: 40px; border: 4px solid rgba(250, 204, 21, 0.15); border-top: 4px solid var(--primary-accent); border-radius: 50%; margin-top: 80px; animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+        .header-left { display: flex; align-items: center; }
+        .header-left span { font-weight: 700; font-size: 19px; color: var(--text-main); }
+        .header-right { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+        
+        .coin-display { display: flex; align-items: center; gap: 6px; background: #0B0E14; padding: 6px 14px; border-radius: 20px; font-weight: 700; color: #fff; font-size: 13px; border: 1px solid var(--border-color); }
+        .coin-display i { color: var(--primary-accent); }
+
+        /* TELEGRAM BANNER CSS */
+        .telegram-banner { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(0, 136, 204, 0.2) 0%, rgba(0, 136, 204, 0.05) 100%); border: 1px solid #0088cc; padding: 15px 20px; border-radius: 16px; margin-bottom: 20px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0, 136, 204, 0.15); }
+        .telegram-banner:active { transform: scale(0.98); }
+        .tb-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 16px; font-weight: 700; }
+        .tb-text p { margin: 0; color: #0088cc; font-size: 13px; font-weight: 500; }
+        .tb-icon { width: 45px; height: 45px; background: #0088cc; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 24px; box-shadow: 0 0 15px rgba(0, 136, 204, 0.4); }
+
+        .feature-card { background: var(--card-bg); padding: 20px; border-radius: 16px; margin-bottom: 15px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .feature-card h3 { margin: 0 0 10px 0; font-size: 16px; display: flex; align-items: center; gap: 8px; color: var(--text-main); }
+        .feature-card p { margin: 0 0 15px 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        .btn-watch { background: #0B0E14; color: #fff; border: 1px solid var(--border-color); padding: 12px; font-size: 14px; border-radius: 10px; }
+
+        .profile-header { text-align: center; margin-bottom: 25px; }
+        .user-avatar { width: 90px; height: 90px; background: #0B0E14; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 12px auto; border: 2px solid var(--primary-accent); box-shadow: 0 0 15px var(--primary-glow); }
+        .list-menu { background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); }
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .menu-item:active { background: #0B0E14; }
+        .menu-title { display: flex; align-items: center; gap: 14px; font-size: 15px; font-weight: 500; }
+        .menu-title i { width: 20px; text-align: center; color: var(--primary-accent); font-size: 18px; }
+
+        .sub-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .back-btn { font-size: 20px; cursor: pointer; color: var(--text-main); padding: 5px; }
+
+        .plan-card { display: flex; justify-content: space-between; align-items: center; background: #0B0E14; padding: 18px; border-radius: 14px; border: 2px solid var(--border-color); margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; }
+        .plan-card.active { border-color: var(--primary-accent); background: rgba(250, 204, 21, 0.05); }
+        .plan-info h4 { margin: 0 0 6px 0; font-size: 16px; font-weight: 700; color: #fff; }
+        .plan-info p { margin: 0; font-size: 13px; color: var(--text-muted); }
+        .plan-price { font-weight: bold; color: var(--text-main); font-size: 18px; display: flex; align-items: center; gap: 5px; }
+        .plan-price i { color: var(--primary-accent); }
+
+        .wallet-main-card { background: linear-gradient(135deg, #1E293B 0%, #0B0E14 100%); padding: 25px; text-align: center; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--border-color); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+        .balance-grid { display: flex; gap: 12px; margin-bottom: 20px; }
+        .balance-sub-card { flex: 1; background: var(--card-bg); padding: 16px; border-radius: 14px; text-align: center; border: 1px solid var(--border-color); }
+        
+        .history-item { background: var(--card-bg); padding: 16px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; border: 1px solid var(--border-color); }
+        .history-left div:last-child { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+        .status-badge { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-success { background: rgba(16, 185, 129, 0.15); color: var(--success-green); }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: var(--pending-orange); }
+        .status-rejected { background: rgba(239, 68, 68, 0.15); color: var(--error-red); }
+
+        .support-card { display: flex; align-items: center; background: var(--card-bg); padding: 16px; border-radius: 14px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border-color); transition: 0.2s; }
+        .support-card:active { background: #0B0E14; transform: scale(0.98); }
+        .s-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 22px; margin-right: 15px; flex-shrink: 0; }
+        .s-text { flex: 1; }
+        .s-text h4 { margin: 0 0 5px 0; font-size: 15px; font-weight: 600; color: #fff; }
+        .s-text p { margin: 0; font-size: 12px; color: var(--text-muted); }
+
+        .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--card-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; z-index: 10; }
+        .nav-tab { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 500; transition: color 0.2s; }
+        .nav-tab i { font-size: 22px; margin-bottom: 5px; }
+        .nav-tab.active { color: var(--primary-accent); }
+
+        .popup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .popup-card { background: var(--card-bg); width: 85%; padding: 30px 25px; border-radius: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        
+        #native-snackbar { visibility: hidden; min-width: 260px; max-width: 90%; background: rgba(18, 22, 32, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #fff; text-align: left; border-radius: 16px; padding: 12px 15px; position: absolute; z-index: 3000; left: 50%; bottom: 85px; transform: translateX(-50%) scale(0.9); box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 1px 2px rgba(255,255,255,0.05); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; overflow: hidden; }
+        .snackbar-icon-wrap { width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; flex-shrink: 0; transition: all 0.3s; }
+        #snackbar-icon { font-size: 18px; }
+        .snackbar-content { flex: 1; padding-right: 5px; }
+        .snackbar-content h4 { margin: 0 0 3px 0; font-size: 14px; font-weight: 700; color: #fff; }
+        .snackbar-content p { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.3; }
+        .snackbar-progress { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--primary-accent); width: 0%; }
+
+        #native-snackbar.show { visibility: visible; animation: slideBouncer 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOutToast 0.4s 4.6s forwards; }
+        #native-snackbar.show .snackbar-progress { animation: timerProgress 5s linear forwards; }
+        @keyframes slideBouncer { from { bottom: 30px; opacity: 0; transform: translateX(-50%) scale(0.85); } to { bottom: 85px; opacity: 1; transform: translateX(-50%) scale(1); } }
+        @keyframes fadeOutToast { from { bottom: 85px; opacity: 1; transform: translateX(-50%) scale(1); } to { bottom: 30px; opacity: 0; transform: translateX(-50%) scale(0.85); } }
+        @keyframes timerProgress { from { width: 100%; } to { width: 0%; } }
+
+        /* BAN SCREEN SPECIFIC CSS */
+        #screen-banned { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; background: var(--bg-dark); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; }
+        .ban-icon-container { width: 120px; height: 120px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 25px; border: 2px solid rgba(239, 68, 68, 0.3); animation: pulseBan 2s infinite; }
+        .ban-icon-container i { font-size: 50px; color: var(--error-red); filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6)); }
+        @keyframes pulseBan { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        
+        .btn-ban-support { width: 100%; padding: 15px; background: var(--error-red); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; margin-bottom: 12px; transition: 0.2s; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-ban-support:active { transform: scale(0.97); }
+        .btn-ban-logout { width: 100%; padding: 15px; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn-ban-logout:active { background: rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+
+    <div id="screen-splash" class="screen" style="padding:0;">
+        <div id="splash-screen">
+            <img src="https://i.postimg.cc/ZRCfGbjS/file-000000007a4471fa86cfddd75fc0064d.png" alt="GloryShop Logo" class="splash-logo">
+            <h1 style="margin:0; font-size: 32px; color: var(--text-main); font-weight: 700;">GloryShop</h1>
+            <div class="bottom-spinner"></div>
+        </div>
+    </div>
+
+    <div id="screen-banned" class="hidden">
+        <div class="ban-icon-container">
+            <i class="fa-solid fa-user-lock"></i>
+        </div>
+        <h2 style="color: #fff; font-size: 26px; margin: 0 0 10px 0;">Account Suspended</h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 35px 0; line-height: 1.6;">Your account has been restricted by the administrator due to suspicious activity or a violation of our terms.</p>
+        
+        <button class="btn-ban-support" onclick="contactSupportBanned()"><i class="fa-solid fa-envelope"></i> Contact Support</button>
+        <button class="btn-ban-logout" onclick="logoutBannedUser()">Logout Safely</button>
+    </div>
+
+    <div id="screen-login" class="screen auth-screen hidden">
+        <div style="text-align: center; margin-bottom: 10px;"><img src="https://i.postimg.cc/ZRCfGbjS/file-000000007a4471fa86cfddd75fc0064d.png" class="auth-logo"></div>
+        <h2 style="text-align: center; font-size: 26px; margin: 0 0 5px 0;">Welcome Back</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">Log in to your GloryShop account</p>
+        
+        <div class="form-group"><label>Email address</label><input type="email" id="login-email" placeholder="name@example.com"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="login-pass" placeholder="Enter password"></div>
+        <div class="link-text" style="text-align: right; margin-top: -5px;" onclick="resetPassword()">Forget password?</div>
+        
+        <button class="btn" id="btnLogin" style="margin-top: 15px;" onclick="handleLogin()">Login</button>
+        <div class="link-text" onclick="showAuthScreen('screen-signup')">Create a New Account</div>
+    </div>
+
+    <div id="screen-signup" class="screen auth-screen hidden">
+        <h2 style="text-align: center; font-size: 26px; margin: 0 0 5px 0;">Sign Up</h2>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px; font-size: 14px;">Register a new account</p>
+        
+        <div class="form-group"><label>Full Name</label><input type="text" id="reg-name" placeholder="Your Name"></div>
+        <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="Username"></div>
+        <div class="form-group"><label>Email address</label><input type="email" id="reg-email" placeholder="name@example.com"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="reg-pass" placeholder="Password"></div>
+        
+        <button class="btn" id="btnSignup" onclick="handleSignup()">Sign Up</button>
+        <div class="link-text" onclick="showAuthScreen('screen-login')">Already exists account? Login</div>
+    </div>
+
+    <div id="main-app-layout" class="hidden" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        
+        <header class="app-header">
+            <div class="header-left"><img src="https://i.postimg.cc/ZRCfGbjS/file-000000007a4471fa86cfddd75fc0064d.png" class="header-logo"><span>GloryShop</span></div>
+            <div class="header-right">
+                <div class="coin-display">
+                    <span id="user-coins-header" class="w-tot">0</span>
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+            </div>
+        </header>
+
+        <div style="flex: 1; overflow-y: scroll; position: relative;">
+
+            <div id="tab-home" class="tab-page screen">
+                
+                <div class="telegram-banner" onclick="window.open(dbSettings.linkTelegram || '#', '_blank')">
+                    <div class="tb-text">
+                        <h4>Join Telegram Channel</h4>
+                        <p>For Latest Update</p>
+                    </div>
+                    <div class="tb-icon"><i class="fa-brands fa-telegram"></i></div>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fa-solid fa-circle-play" style="color:var(--primary-accent);"></i> How To Earn Coins</h3>
+                    <p>Open the Earn panel, get your daily secret key from our official sponsor links and submit it to load your wallet with free coins.</p>
+                    <button class="btn btn-watch" onclick="window.open(dbSettings.linkEarn || '#', '_blank')"><i class="fa-solid fa-play" style="color:var(--primary-accent); margin-right:5px;"></i> Watch Video</button>
+                </div>
+                <div class="feature-card">
+                    <h3><i class="fa-solid fa-cart-shopping" style="color:var(--primary-accent);"></i> How To Buy Guild glory</h3>
+                    <p>Go to Profile -> Buy Guild glory. Select your favorite glory plan, enter your in-game Guild UID and place order successfully.</p>
+                    <button class="btn btn-watch" onclick="window.open(dbSettings.linkBuy || '#', '_blank')"><i class="fa-solid fa-play" style="color:var(--primary-accent); margin-right:5px;"></i> Watch Video</button>
+                </div>
+            </div>
+
+            <div id="tab-earn" class="tab-page screen hidden">
+                <div class="feature-card" style="text-align: center; padding: 35px 20px;">
+                    <i class="fa-solid fa-key" style="font-size: 55px; color: var(--primary-accent); margin-bottom: 20px; filter: drop-shadow(0 0 10px var(--primary-glow));"></i>
+                    <h3 style="justify-content: center; font-size: 20px;">Earn Daily Coins</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 30px;">Get the secret key from the sponsor link below and paste it here to earn your reward.</p>
+                    
+                    <div class="form-group" style="text-align: left;">
+                        <label style="text-align: center; color: #fff;">Enter your Key</label>
+                        <input type="text" id="task-key-input" placeholder="Paste Key Here..." style="text-transform:uppercase; text-align: center; font-size: 18px; font-weight: bold; letter-spacing: 2px;">
+                    </div>
+                    
+                    <button class="btn" id="btnSubmitKey" style="margin-bottom: 15px;" onclick="submitEarnKey()">Submit Key</button>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px; margin-top: 20px;">Don't have a key?</p>
+                    
+                    <div class="get-key-box" onclick="handleGetKeyClick()">
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="margin-right: 6px;"></i> Get Key
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-profile" class="tab-page screen hidden">
+                <div class="profile-header">
+                    <div class="user-avatar"><i class="fa-solid fa-user-astronaut" style="font-size: 35px; color: var(--text-main);"></i></div>
+                    <h3 style="margin: 5px 0;" id="prof-name">Loading...</h3>
+                    <p style="margin:0; font-size:13px; color:var(--text-muted);" id="prof-user">@loading</p>
+                </div>
+
+                <div class="list-menu">
+                    <div class="menu-item" onclick="openSubScreen('sub-edit-profile')">
+                        <div class="menu-title"><i class="fa-solid fa-user-pen"></i> Edit profile</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-buy-glory')">
+                        <div class="menu-title"><i class="fa-solid fa-trophy"></i> Buy Guild glory</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-wallet')">
+                        <div class="menu-title"><i class="fa-solid fa-wallet"></i> Wallet</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-wallet-history')">
+                        <div class="menu-title"><i class="fa-solid fa-receipt"></i> Wallet history</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-glory-history')">
+                        <div class="menu-title"><i class="fa-solid fa-clock-rotate-left"></i> Guild glory buy History</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-support')">
+                        <div class="menu-title"><i class="fa-solid fa-headset"></i> Support</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-terms')">
+                        <div class="menu-title"><i class="fa-solid fa-file-contract"></i> Terms & conditions</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="openSubScreen('sub-privacy')">
+                        <div class="menu-title"><i class="fa-solid fa-shield-halved"></i> Privacy policy</div>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="menu-item" onclick="logoutUser()">
+                        <div class="menu-title" style="color: var(--error-red);"><i class="fa-solid fa-right-from-bracket" style="color: var(--error-red);"></i> Logout</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sub-buy-glory" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Buy Guild glory</h3></div>
+                <div class="form-group">
+                    <label>Choose Plan</label>
+                    <input type="hidden" id="selected-cost" value="">
+                    <input type="hidden" id="selected-name" value="">
+                    <div id="dynamic-plans-container">
+                        <div style="text-align:center; color:gray;">Loading Plans...</div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Enter Guild Uid</label>
+                    <input type="number" id="guild-uid" placeholder="e.g. 876452319">
+                </div>
+                <button class="btn" id="btnBuyGlory" style="margin-top: 20px;" onclick="buyGloryOrder()">Place Order</button>
+            </div>
+
+            <div id="sub-edit-profile" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Edit profile</h3></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="edit-fn" value=""></div>
+                <div class="form-group"><label>Username</label><input type="text" id="edit-un" value="" readonly style="opacity:0.6;"></div>
+                <button class="btn" id="btnSaveProf" onclick="saveProfile()">Save Changes</button>
+            </div>
+
+            <div id="sub-wallet" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Wallet</h3></div>
+                <div class="wallet-main-card">
+                    <p style="margin:0; color:var(--text-muted); font-size:14px;">Total balance</p>
+                    <h1 style="margin:8px 0 0 0; color: var(--text-main); font-size:40px;"><i class="fa-solid fa-coins" style="color:var(--primary-accent); font-size:32px;"></i> <span class="w-tot">0</span></h1>
+                </div>
+                <div class="balance-grid">
+                    <div class="balance-sub-card">
+                        <span style="font-size:12px; color:var(--text-muted);">Available balance</span>
+                        <h3 style="margin:8px 0 0 0; color:var(--success-green); font-size:18px;" class="w-tot">0</h3>
+                    </div>
+                    <div class="balance-sub-card">
+                        <span style="font-size:12px; color:var(--text-muted);">Total Spent</span>
+                        <h3 style="margin:8px 0 0 0; color:var(--error-red); font-size:18px;" id="tot-spent">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sub-wallet-history" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Wallet history</h3></div>
+                <div id="wallet-hist-list">
+                    <div style="text-align:center; color:gray; margin-top:20px;">No transactions yet.</div>
+                </div>
+            </div>
+
+            <div id="sub-glory-history" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Guild glory buy History</h3></div>
+                <div id="glory-hist-list">
+                    <div style="text-align:center; color:gray; margin-top:20px;">No orders yet.</div>
+                </div>
+            </div>
+
+            <div id="sub-support" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Help & Support</h3></div>
+                <div style="text-align:center; padding: 15px 0 25px 0;">
+                    <div style="width: 80px; height: 80px; background: rgba(250, 204, 21, 0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px auto;"><i class="fa-solid fa-headset" style="font-size: 35px; color: var(--primary-accent);"></i></div>
+                    <h2 style="margin:0; font-size:22px; color: #fff;">How can we help?</h2>
+                </div>
+                <h4 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">Contact Options</h4>
+                <div class="support-card" onclick="window.open(dbSettings.linkTelegram || '#', '_blank')">
+                    <div class="s-icon" style="background: rgba(0, 136, 204, 0.15); color: #0088cc;"><i class="fa-brands fa-telegram"></i></div>
+                    <div class="s-text"><h4>Telegram Support</h4><p>Fastest response</p></div><i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
+                </div>
+                <div class="support-card" onclick="window.location.href='mailto:' + (dbSettings.linkEmail || 'support@gloryshop.com')">
+                    <div class="s-icon" style="background: rgba(234, 67, 53, 0.15); color: #ea4335;"><i class="fa-solid fa-envelope"></i></div>
+                    <div class="s-text"><h4>Email Address</h4><p id="ui-support-email">support@gloryshop.com</p></div><i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 13px;"></i>
+                </div>
+                
+                <div class="telegram-banner" style="margin-top: 30px;" onclick="window.open(dbSettings.linkTelegram || '#', '_blank')">
+                    <div class="tb-text">
+                        <h4>Join Telegram Channel</h4>
+                        <p>For Latest Update</p>
+                    </div>
+                    <div class="tb-icon"><i class="fa-brands fa-telegram"></i></div>
+                </div>
+            </div>
+
+            <div id="sub-terms" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Terms & conditions</h3></div>
+                <p id="ui-terms" style="font-size:13px; color:var(--text-muted); line-height:1.6;">Loading...</p>
+            </div>
+
+            <div id="sub-privacy" class="sub-page screen hidden">
+                <div class="sub-header"><i class="fa-solid fa-arrow-left back-btn" onclick="closeSubScreen()"></i><h3 style="margin:0;">Privacy policy</h3></div>
+                <p id="ui-privacy" style="font-size:13px; color:var(--text-muted); line-height:1.6;">Loading...</p>
+            </div>
+        </div>
+
+        <nav class="bottom-nav" id="bottom-nav-bar">
+            <div class="nav-tab active" id="nav-tab-home" onclick="switchTab('tab-home')"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-tab" id="nav-tab-earn" onclick="switchTab('tab-earn')"><i class="fa-solid fa-sack-dollar"></i><span>Earn</span></div>
+            <div class="nav-tab" id="nav-tab-profile" onclick="switchTab('tab-profile')"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+        </nav>
+
+    </div>
+
+    <div id="popup-update" class="popup-overlay hidden" style="z-index: 1000;">
+        <div class="popup-card">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 50px; color: var(--primary-accent); margin-bottom: 20px; filter: drop-shadow(0 0 10px var(--primary-glow));"></i>
+            <h3 style="margin:0 0 12px 0; font-size: 20px; color: #fff;">Update required</h3>
+            <p id="updMsgText" style="color: var(--text-muted); font-size:14px; margin:0 0 25px 0; line-height: 1.5;">A new optimized version is available.</p>
+            <button class="btn" id="btnDoUpdate">Update Now</button>
+        </div>
+    </div>
+
+    <div id="native-snackbar">
+        <div class="snackbar-icon-wrap" id="snackbar-bg"><i class="fa-solid fa-bell" id="snackbar-icon"></i></div>
+        <div class="snackbar-content"><h4 id="snackbar-title">Title</h4><p id="snackbar-msg">Message</p></div>
+        <div class="snackbar-progress" id="snackbar-bar"></div>
+    </div>
+
+</div>
+
+<script>
+    // --- 1. FIREBASE CONFIGURATION (Must match Admin Panel) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCz2_CXN3jDxidlwwGhpwMb1LbAsXwYOB0",
+      authDomain: "gloryshop-f787f.firebaseapp.com",
+      databaseURL: "https://gloryshop-f787f-default-rtdb.firebaseio.com",
+      projectId: "gloryshop-f787f",
+      storageBucket: "gloryshop-f787f.firebasestorage.app",
+      messagingSenderId: "1015058453909",
+      appId: "1:1015058453909:web:4d37c92ee9f30f8be0129c",
+      measurementId: "G-P9Z60VEVLH"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    // Global User State
+    let currentUser = null;
+    let userData = null;
+    let dbSettings = {};
+    let totalSpent = 0;
+    
+    // Array to hold full objects of all active keys added by admin
+    let activeKeysList = [];
+
+    // --- 3. AUTH STATE LISTENER (The Core) ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            
+            // Listen to live User Data
+            db.collection('users').doc(user.uid).onSnapshot(doc => {
+                if(doc.exists) {
+                    userData = doc.data();
+                    
+                    // NEW: Professional Account Ban System Trigger
+                    if(userData.isBanned) return forceBan();
+                    
+                    updateUserUI();
+                } else {
+                    auth.signOut();
+                    showAlert("Error", "User data not found. Please log in again or create a new account.");
+                }
+            });
+
+            // Initial Data Loads
+            loadPlans();
+            loadWalletHistory();
+            loadGloryHistory();
+            loadAdminSettings();
+            loadActiveKeys(); 
+
+            // Hide Splash & Show App (if not banned)
+            if(!userData || !userData.isBanned) {
+                document.getElementById('screen-banned').classList.add('hidden');
+                document.getElementById('screen-splash').classList.add('hidden');
+                document.getElementById('screen-login').classList.add('hidden');
+                document.getElementById('screen-signup').classList.add('hidden');
+                document.getElementById('main-app-layout').classList.remove('hidden');
+            }
+        } else {
+            currentUser = null;
+            userData = null;
+            // Show Login
+            document.getElementById('screen-splash').classList.add('hidden');
+            document.getElementById('main-app-layout').classList.add('hidden');
+            document.getElementById('screen-banned').classList.add('hidden');
+            document.getElementById('screen-login').classList.remove('hidden');
+        }
+    });
+
+    // Handle Keyboard Resize
+    window.addEventListener('resize', () => {
+        document.getElementById('bottom-nav-bar').style.display = (window.innerHeight < 500) ? 'none' : 'flex';
+    });
+
+    // --- 4. AUTHENTICATION LOGIC ---
+    async function handleSignup() {
+        let name = document.getElementById('reg-name').value;
+        let username = document.getElementById('reg-username').value.trim();
+        let email = document.getElementById('reg-email').value.trim();
+        let pass = document.getElementById('reg-pass').value;
+
+        if(!name || !username || !email || !pass) return showAlert("Error", "Fill all fields!");
+        document.getElementById('btnSignup').disabled = true;
+
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('users').doc(userCredential.user.uid).set({
+                name: name,
+                username: username,
+                email: email,
+                coins: 0,
+                claimedKeys: [], 
+                isBanned: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showAlert("Success", "Account created successfully!");
+        } catch(error) {
+            showAlert("Signup Failed", error.message);
+        }
+        document.getElementById('btnSignup').disabled = false;
+    }
+
+    async function handleLogin() {
+        let email = document.getElementById('login-email').value.trim();
+        let pass = document.getElementById('login-pass').value;
+        if(!email || !pass) return showAlert("Error", "Enter email and password!");
+        document.getElementById('btnLogin').disabled = true;
+
+        try {
+            await auth.signInWithEmailAndPassword(email, pass);
+            showAlert("Success", "Logged in successfully!");
+        } catch(error) {
+            showAlert("Login Failed", "Invalid Email or Password");
+        }
+        document.getElementById('btnLogin').disabled = false;
+    }
+
+    function logoutUser() {
+        auth.signOut();
+    }
+
+    function resetPassword() {
+        let email = document.getElementById('login-email').value;
+        if(!email) return showAlert("Error", "Type email first to reset password.");
+        auth.sendPasswordResetEmail(email).then(()=> showAlert("Sent", "Password reset link sent to your email."));
+    }
+
+    // --- 5. DATA FETCHING & UI UPDATES ---
+    function updateUserUI() {
+        if (!userData) return;
+        document.querySelectorAll('.w-tot').forEach(el => el.innerText = userData.coins || 0);
+        document.getElementById('prof-name').innerText = userData.name || "User";
+        document.getElementById('prof-user').innerText = "@" + (userData.username || "unknown");
+        document.getElementById('edit-fn').value = userData.name || "";
+        document.getElementById('edit-un').value = userData.username || "";
+    }
+
+    function loadActiveKeys() {
+        db.collection("taskKeys").where("active", "==", true).onSnapshot(snap => {
+            let tempArray = [];
+            snap.forEach(doc => {
+                let d = doc.data();
+                tempArray.push({
+                    id: doc.id,
+                    link: d.link || `https://example-sponsor.com/generate?task=${doc.id}`,
+                    createdAt: d.createdAt ? d.createdAt.toMillis() : 0
+                });
+            });
+            tempArray.sort((a, b) => a.createdAt - b.createdAt);
+            activeKeysList = tempArray;
+        });
+    }
+
+    function loadPlans() {
+        db.collection("plans").where("status", "==", "active").onSnapshot(snap => {
+            let container = document.getElementById('dynamic-plans-container');
+            let html = "";
+            let first = true;
+            snap.forEach(doc => {
+                let d = doc.data();
+                let activeClass = first ? "active" : "";
+                if(first) {
+                    document.getElementById('selected-cost').value = d.cost;
+                    document.getElementById('selected-name').value = d.name;
+                    first = false;
+                }
+                html += `<div class="plan-card ${activeClass}" onclick="selectPlan(this, ${d.cost}, '${d.name}')">
+                            <div class="plan-info"><h4>${d.name}</h4><p>Get ${d.gloryAmount} Guild Glory</p></div>
+                            <div class="plan-price">${d.cost} <i class="fa-solid fa-coins"></i></div>
+                         </div>`;
+            });
+            container.innerHTML = html || `<p style="text-align:center;color:gray;">No plans available.</p>`;
+        });
+    }
+
+    function loadAdminSettings() {
+        db.collection("admin").doc("settings").onSnapshot(doc => {
+            if(doc.exists) {
+                dbSettings = doc.data();
+                document.getElementById('ui-support-email').innerText = dbSettings.linkEmail || 'support@gloryshop.com';
+                document.getElementById('ui-terms').innerText = dbSettings.terms || 'Terms text unavailable.';
+                document.getElementById('ui-privacy').innerText = dbSettings.privacy || 'Privacy text unavailable.';
+            }
+        });
+        db.collection("admin").doc("appUpdate").onSnapshot(doc => {
+            if(doc.exists && doc.data().versionCode) {
+                document.getElementById('popup-update').classList.remove('hidden');
+                document.getElementById('updMsgText').innerText = doc.data().message;
+                document.getElementById('btnDoUpdate').onclick = () => window.open(doc.data().link, '_blank');
+                if(doc.data().type === "optional") {
+                    document.getElementById('btnDoUpdate').innerText = "Update Now (Tap outside to dismiss)";
+                    document.getElementById('popup-update').onclick = (e) => { if(e.target.id==='popup-update') e.target.classList.add('hidden'); }
+                }
+            }
+        });
+    }
+
+    function loadWalletHistory() {
+        if(!currentUser) return;
+        db.collection("walletHistory").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").onSnapshot(snap => {
+            let html = "";
+            snap.forEach(doc => {
+                let d = doc.data();
+                let color = d.type === 'add' ? 'var(--success-green)' : 'var(--error-red)';
+                let sign = d.type === 'add' ? '+' : '-';
+                let dateStr = d.timestamp ? d.timestamp.toDate().toLocaleDateString() : 'Just now';
+                html += `<div class="history-item"><div class="history-left"><div style="font-weight:bold; color: #fff;">${d.title}</div>
+                         <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Date: ${dateStr}</div></div>
+                         <div style="color:${color}; font-weight:bold;">${sign}${d.amount} Coins</div></div>`;
+            });
+            document.getElementById('wallet-hist-list').innerHTML = html || "<p style='text-align:center;color:gray;'>No transactions</p>";
+        });
+    }
+
+    function loadGloryHistory() {
+        if(!currentUser) return;
+        db.collection("orders").where("userId", "==", currentUser.uid).orderBy("timestamp", "desc").onSnapshot(snap => {
+            let html = "";
+            totalSpent = 0;
+            snap.forEach(doc => {
+                let d = doc.data();
+                totalSpent += d.cost;
+                let badgeClass = d.status === 'pending' ? 'status-pending' : (d.status === 'completed' ? 'status-success' : 'status-rejected');
+                let dateStr = d.timestamp ? d.timestamp.toDate().toLocaleDateString() : 'Just now';
+                html += `<div class="history-item" style="flex-direction: column; align-items: flex-start;">
+                            <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:8px;">
+                                <span style="font-weight:bold; color: #fff; font-size:15px;">${d.planName}</span>
+                                <span class="status-badge ${badgeClass}">${d.status}</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--text-muted); width:100%; display:flex; justify-content:space-between;">
+                                <span>UID: ${d.gameUid}</span><span>Date: ${dateStr}</span>
+                            </div>
+                        </div>`;
+            });
+            document.getElementById('glory-hist-list').innerHTML = html || "<p style='text-align:center;color:gray;'>No orders placed</p>";
+            document.getElementById('tot-spent').innerText = totalSpent;
+        });
+    }
+
+    // --- 6. CORE ACTIONS (EARN & BUY) ---
+    function handleGetKeyClick() {
+        if (!userData) return showAlert("Error", "Please wait, loading user data...");
+
+        if (activeKeysList.length === 0) {
+            return showAlert("Not Available", "Task Not Available");
+        }
+
+        let claimed = userData.claimedKeys || [];
+        let nextAvailableTask = activeKeysList.find(task => !claimed.includes(task.id));
+
+        if (!nextAvailableTask) {
+            return showAlert("Tasks Completed", "Aapne saari key claim kar chuke hai. Aap wait kare daily 9:00 AM ko key add ho jata hai.");
+        }
+
+        window.open(nextAvailableTask.link, '_blank');
+    }
+
+    async function submitEarnKey() {
+        if(!userData) return showAlert("Error", "User data missing. Please refresh.");
+        
+        let input = document.getElementById('task-key-input').value.toUpperCase().trim();
+        let btn = document.getElementById('btnSubmitKey');
+        if(!input) return showAlert("Error", "Enter a key!");
+
+        let claimed = userData.claimedKeys || [];
+        if (claimed.includes(input)) {
+            return showAlert("Old Key", "You have already claimed this key on this account.");
+        }
+        
+        btn.disabled = true;
+        btn.innerText = "Verifying...";
+
+        try {
+            let keyDoc = await db.collection("taskKeys").doc(input).get();
+            if(!keyDoc.exists || !keyDoc.data().active) throw new Error("Invalid or Expired Secret Key.");
+            
+            let rewardAmt = keyDoc.data().reward;
+
+            await db.runTransaction(async (t) => {
+                let userRef = db.collection("users").doc(currentUser.uid);
+                let uDoc = await t.get(userRef);
+                
+                t.update(userRef, { 
+                    coins: (uDoc.data().coins || 0) + rewardAmt,
+                    claimedKeys: firebase.firestore.FieldValue.arrayUnion(input)
+                });
+                
+                let histRef = db.collection("walletHistory").doc();
+                t.set(histRef, { 
+                    userId: currentUser.uid, 
+                    title: "Secret Task Key Reward", 
+                    amount: rewardAmt, 
+                    type: "add", 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+            });
+
+            showAlert("Congratulations!", `Key Verified! +${rewardAmt} Coins added.`);
+            document.getElementById('task-key-input').value = '';
+        } catch(error) {
+            showAlert("Failed", error.message);
+        }
+
+        btn.disabled = false;
+        btn.innerText = "Submit Key";
+    }
+
+    async function buyGloryOrder() {
+        if(!userData) return showAlert("Error", "User data missing. Please refresh.");
+
+        let cost = parseInt(document.getElementById('selected-cost').value);
+        let planName = document.getElementById('selected-name').value;
+        let gameUid = document.getElementById('guild-uid').value.trim();
+        let btn = document.getElementById('btnBuyGlory');
+
+        if(!gameUid) return showAlert("Missing", "Enter Guild UID");
+        if((userData.coins || 0) < cost) return showAlert("Failed", "Insufficient coin balance!");
+
+        btn.disabled = true;
+        btn.innerText = "Processing...";
+
+        try {
+            await db.runTransaction(async (t) => {
+                let userRef = db.collection("users").doc(currentUser.uid);
+                let uDoc = await t.get(userRef);
+                
+                if((uDoc.data().coins || 0) < cost) throw new Error("Insufficient balance during transaction.");
+
+                t.update(userRef, { coins: uDoc.data().coins - cost });
+                
+                let orderRef = db.collection("orders").doc();
+                t.set(orderRef, { userId: currentUser.uid, userName: userData.name, userEmail: userData.email, planName: planName, cost: cost, gameUid: gameUid, status: "pending", timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+
+                let histRef = db.collection("walletHistory").doc();
+                t.set(histRef, { userId: currentUser.uid, title: "Bought " + planName, amount: cost, type: "sub", timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            });
+
+            showAlert("Success", "Order placed successfully! Waiting for admin approval.");
+            document.getElementById('guild-uid').value = '';
+            closeSubScreen();
+        } catch(error) {
+            showAlert("Error", error.message);
+        }
+
+        btn.disabled = false;
+        btn.innerText = "Place Order";
+    }
+
+    async function saveProfile() {
+        let name = document.getElementById('edit-fn').value;
+        if(!name) return;
+        await db.collection("users").doc(currentUser.uid).update({ name: name });
+        showAlert("Saved", "Profile updated.");
+        closeSubScreen();
+    }
+
+    // --- NEW: PREMIUM ACCOUNT BAN SYSTEM LOGIC ---
+    function forceBan() {
+        // Hiding all normal app screens
+        document.getElementById('screen-splash').classList.add('hidden');
+        document.getElementById('main-app-layout').classList.add('hidden');
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-signup').classList.add('hidden');
+        
+        // Show Full Screen Premium Ban Alert
+        document.getElementById('screen-banned').classList.remove('hidden');
+    }
+
+    function logoutBannedUser() {
+        auth.signOut();
+        document.getElementById('screen-banned').classList.add('hidden');
+        document.getElementById('screen-login').classList.remove('hidden');
+    }
+
+    function contactSupportBanned() {
+        let email = dbSettings.linkEmail || 'support@gloryshop.com';
+        window.location.href = 'mailto:' + email;
+    }
+
+    // --- UI HELPERS ---
+    function showAuthScreen(id) {
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-signup').classList.add('hidden');
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.sub-page').forEach(el => el.classList.add('hidden'));
+        document.getElementById(tabId).classList.remove('hidden');
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById('nav-' + tabId).classList.add('active');
+    }
+
+    function openSubScreen(subId) {
+        document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
+        document.getElementById(subId).classList.remove('hidden');
+    }
+
+    function closeSubScreen() {
+        document.querySelectorAll('.sub-page').forEach(el => el.classList.add('hidden'));
+        let activeNav = document.querySelector('.nav-tab.active').id.replace('nav-', '');
+        document.getElementById(activeNav).classList.remove('hidden');
+    }
+
+    function selectPlan(element, cost, planName) {
+        document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('selected-cost').value = cost;
+        document.getElementById('selected-name').value = planName;
+    }
+
+    // Snackbar Code
+    let snackbarTimeout;
+    function showAlert(title, message) {
+        let snackbar = document.getElementById('native-snackbar');
+        let icon = document.getElementById('snackbar-icon');
+        let bgWrap = document.getElementById('snackbar-bg');
+        let progBar = document.getElementById('snackbar-bar');
+
+        let t = title.toLowerCase();
+        if (t.includes('error') || t.includes('failed') || t.includes('missing') || t.includes('old') || t.includes('not available')) {
+            icon.className = "fa-solid fa-circle-exclamation"; icon.style.color = "var(--error-red)"; bgWrap.style.background = "rgba(239, 68, 68, 0.15)"; progBar.style.background = "var(--error-red)";
+        } else if (t.includes('success') || t.includes('congratulations') || t.includes('saved') || t.includes('completed')) {
+            icon.className = "fa-solid fa-circle-check"; icon.style.color = "var(--success-green)"; bgWrap.style.background = "rgba(16, 185, 129, 0.15)"; progBar.style.background = "var(--success-green)";
+        } else {
+            icon.className = "fa-solid fa-bell"; icon.style.color = "var(--primary-accent)"; bgWrap.style.background = "rgba(250, 204, 21, 0.15)"; progBar.style.background = "var(--primary-accent)";
+        }
+
+        document.getElementById('snackbar-title').innerText = title;
+        document.getElementById('snackbar-msg').innerText = message;
+        
+        snackbar.classList.remove('show');
+        void snackbar.offsetWidth;
+        snackbar.classList.add('show');
+        
+        clearTimeout(snackbarTimeout);
+        snackbarTimeout = setTimeout(() => { snackbar.classList.remove('show'); }, 5000);
+    }
+</script>
+</body>
+</html>
